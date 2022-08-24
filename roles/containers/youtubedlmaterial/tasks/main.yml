@@ -1,0 +1,49 @@
+---
+- name: YouTubeDL-Material Directory
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ youtubedlmaterial_data_directory }}/appdata"
+    - "{{ youtubedlmaterial_data_directory }}/audio"
+    - "{{ youtubedlmaterial_data_directory }}/video"
+    - "{{ youtubedlmaterial_data_directory }}/subscriptions"
+    - "{{ youtubedlmaterial_dl_audio_directory }}"
+    - "{{ youtubedlmaterial_dl_video_directory }}"
+    - "{{ youtubedlmaterial_dl_subscriptions_directory }}"
+
+- name: YouTubeDL-Material Docker Container
+  docker_container:
+    name: youtubedlmaterial
+    image: tzahi12345/youtubedl-material:latest
+    pull: true
+    #networks:
+    # - proxy
+    volumes:
+      - "{{ youtubedlmaterial_data_directory }}/appdata:/app/appdata:rw"
+      - "{{ youtubedlmaterial_dl_audio_directory }}:/app/audio:rw"
+      - "{{ youtubedlmaterial_dl_video_directory }}:/app/video:rw"
+      - "{{ youtubedlmaterial_dl_subscriptions_directory }}:/app/subscriptions:rw"
+    ports:
+      - "{{ youtubedlmaterial_port_http }}:17442"
+    env:
+      ALLOW_CONFIG_MUTATIONS: "true"
+      TZ: "{{ timezone }}"
+    restart_policy: unless-stopped
+    #labels:
+    # - "traefik.enable=true"
+    # - "traefik.http.routers.youtubedlmaterial.entrypoints=http"
+    # - "traefik.http.routers.youtubedlmaterial.rule=Host(`youtubedlmaterial.local.atahankucuk.com`)"
+    # - "traefik.http.middlewares.youtubedlmaterial-https-redirect.redirectscheme.scheme=https"
+    # - "traefik.http.routers.youtubedlmaterial.middlewares=youtubedlmaterial-https-redirect"
+    # - "traefik.http.routers.youtubedlmaterial-secure.entrypoints=https"
+    # - "traefik.http.routers.youtubedlmaterial-secure.rule=Host(`youtubedlmaterial.local.atahankucuk.com`)"
+    # - "traefik.http.routers.youtubedlmaterial-secure.tls=true"
+    # - "traefik.http.routers.youtubedlmaterial-secure.service=youtubedlmaterial"
+    # - "traefik.http.services.youtubedlmaterial.loadbalancer.server.port=8998"
+    # - "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no

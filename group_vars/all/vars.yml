@@ -1,0 +1,174 @@
+#Disks
+mergerfs_root: /mnt/storage
+enable_mergerfs: false
+docker_dir: /opt/docker/data
+spindown_time: 600 # in seconds
+disks:
+  - { path: /mnt/data1, src: /dev/sdb1, content: true }
+  - { path: /mnt/data2, src: /dev/sdc1, content: true }
+parity_disks:
+  - { path: /mnt/parity1, src: /dev/sda1, content: true }
+
+
+#Misc
+#domain: 
+username: atahan
+hostname: '{{ inventory_hostname }}'
+timezone: America/Indiana/Indianapolis
+ntp_timezone: '{{ timezone }}'
+guid: '1000'
+locale: en_US.UTF-8
+version: jammy
+apt_mirror: http://us.ports.ubuntu.com
+
+extra_packages:
+  - speedtest-cli
+  - git
+  - python3
+  - neofetch
+  - tmux
+  - htop
+  - cmatrix
+  - vim
+  - python3-pip
+  - rsync
+  - ncdu
+  - neovim
+  - iperf3
+  - iotop
+  - lm-sensors
+  - apache2-utils
+  - cockpit-pcp
+  
+#S.M.A.R.T
+smartd_default_mail_recipients: [ "{{ email }}" ]
+
+#Samba
+samba_server_string: '{{ hostname }}'
+samba_users:
+  - name: '{{ username }}'
+    password: '{{ password }}'
+  #- name: '{{ additional_users[0].name }}'
+  #  password: '{{ password2 }}'
+
+samba_global_include: global-include.conf
+samba_apple_extensions: yes
+samba_mitigate_cve_2017_7494: false
+samba_server_max_protocol: 'SMB3'
+samba_server_min_protocol: 'SMB3'
+
+samba_shares:
+  - name: Trash
+    guest_ok: yes
+    public: no
+    read_only: no
+    writable: yes
+    owner: '{{ username }}'
+    browseable: yes
+    path: '{{ mergerfs_root }}'
+    valid_users: '{{ username }}'
+    write_list: '{{ username }}'
+
+  - name: Downloads
+    guest_ok: yes
+    public: no
+    read_only: no
+    writable: yes
+    browseable: yes
+    owner: '{{ username }}'
+    path: '{{ mergerfs_root }}/Downloads'
+    valid_users: '{{ username }}'
+    write_list: '{{ username }}'
+
+  - name: Media
+    guest_ok: yes
+    public: no
+    read_only: no
+    writable: yes
+    browseable: yes
+    owner: '{{ username }}'
+    path: '{{ mergerfs_root }}/Media'
+    valid_users: '{{ username }}'
+    write_list: '{{ username }}'
+
+
+# SSH (geerlingguy.security)
+
+security_ssh_port: 22
+security_sudoers_passwordless: [ '{{ username }}' ]
+security_autoupdate_reboot: true
+security_autoupdate_mail_to: '{{ email }}'
+security_autoupdate_reboot_time: '5:00'
+security_autoupdate_mail_on_error: true
+security_fail2ban_enabled: false 
+
+
+
+
+
+#locations
+
+downloads_root: "{{ mergerfs_root }}/Downloads"
+movies_root: "{{ mergerfs_root }}/Media/Movies"
+tv_root: "{{ mergerfs_root }}/Media/TV"
+torrents_root: "{{ mergerfs_root }}/Downloads/Torrents"
+music_root: "{{ mergerfs_root }}/Media/Music"
+books_root: "{{ mergerfs_root }}/Media/Books"
+photos_root: "{{ mergerfs_root }}/Media/Photos"
+documents_root: "{{ mergerfs_root }}/Media/Documents"
+podcasts_root: "{{ mergerfs_root }}/Media/Podcasts"
+audiobooks_root: "{{ mergerfs_root }}/Media/Audiobooks"
+
+
+#Credentials
+
+github_token: ''
+password: ''
+password2: ''
+vpn_password: ''
+email:
+# Enable services
+enable_nas_stuff: true
+enable_samba: true
+enable_node_exporter: true
+enable_wireguard: true
+enable_cockpit: true
+
+#Snapraid
+#snapraid_data_disks: '{{ disks }}'
+#snapraid_parity_disks: "{{ parity_disks }}"
+#snapraid_bin_path: /usr/bin/snapraid
+#snapraid_config_path: /etc/snapraid.conf
+#snapraid_runner_email_pass: "{{ email_password }}"
+#snapraid_runner_email_address: "{{ email }}"
+#snapraid_runner_email_address_from: "{{ snapraid_runner_email_address }}"
+#snapraid_runner_email_address_to: "{{ snapraid_runner_email_address }}"
+#snapraid_runner_smtp_host: "{{ email_smtp_host }}"
+#snapraid_runner_smtp_port: "{{ email_smtp_port }}"
+#snapraid_runner_path: /opt/snapraid-runner/snapraid-runner
+#snapraid_runner_conf: "{{ snapraid_runner_path }}.conf"
+#snapraid_runner_bin: "{{ snapraid_runner_path }}.py"
+#snapraid_runner_command: "python3 {{ snapraid_runner_bin }} -c {{ snapraid_runner_conf }}"
+
+# Stop all the docker containers, backup the {{ docker_dir }} to the MergerFS pool, execute the snapraid runner and start the containers back up
+# Stopping the containers is necessary – backing up the data folder with the containers running will result in corrputed database files and no files can be changed during the Snapraid sync
+#snapraid_runner_cron_jobs:
+#    - {
+#          job: 'docker stop $(docker ps -q); rsync -avz --delete --exclude cache {{ docker_dir }} {{ mergerfs_root }}/docker_data; docker start $(docker ps -a -q) && {{ snapraid_runner_command }} ',
+#          name: 'snapraid_runner',
+#          weekday: '0',
+#          hour: '3',
+#      }
+
+#snapraid_runner_delete_threshold: 999999
+#snapraid_runner_email_sendon: "error"
+#snapraid_runner_use_ssl: true
+#snapraid_content_files:
+#  - /var/snapraid.content
+#snapraid_config_excludes:
+#  - "*.unrecoverable"
+#  - /lost+found/
+#  - "*.!sync"
+#  - /tmp/
+#  - "/Downloads/*"
+

@@ -1,0 +1,203 @@
+---
+- hosts: server
+  gather_facts: no
+
+  pre_tasks:
+    - import_tasks: tasks/ssh_juggle_port.yml
+      tags:
+        - port
+
+- hosts: server
+  gather_facts: yes
+  become: yes
+
+  roles: 
+  # Basics
+    - role: system
+      become: yes
+      tags:
+        - system
+    
+    #- role: filesystems
+    #  become: yes
+    #  tags:
+    #    - filesystems
+    
+    - role: stuvusit.smartd
+      become: yes
+      tags:
+        - smartd
+      when: enable_nas_stuff | default(False)
+
+
+    - role: hd-idle
+      become: yes
+      tags:
+        - hd-idle
+
+    - role: neovim
+      become: yes
+      tags:
+        - neovim
+
+    - role: docker
+      become: yes
+      tags: 
+        - docker
+    
+    - role: chriswayg.msmtp-mailer
+      become: yes
+      tags:
+        - msmtp
+
+    - role: geerlingguy.ntp
+      become: yes
+      tags:
+        - ntp
+
+    - role: geerlingguy.security
+      tags:
+        - security
+
+    # Docker containers
+
+    
+    #- role: containers/traefik
+    # become: yes
+    #  tags:
+    #    - traefik
+    #   - containers
+    # when: (traefik_enabled | default(False))
+
+    - role: containers/watchtower
+      become: yes
+      tags:
+        - watchtower
+        - containers
+      
+    - role: containers/portainer
+      become: yes
+      tags:
+       - portainer
+       - containers
+      when: (portainer_enabled | default(False))
+
+    - role: containers/heimdall
+      become: yes
+      tags:
+        - heimdall
+        - containers
+      when: (heimdall_enabled | default(False))
+    
+    - role: containers/plex
+      become: yes
+      tags:
+        - plex
+        - containers
+      when: (plex_enabled | default(False))
+
+    - role: containers/jellyfin
+      become: yes
+      tags:
+        - jellyfin
+        - containers
+      when: (jellyfin_enabled | default(False))
+    
+    - role: containers/sonarr
+      become: yes
+      tags:
+        - sonarr
+        - containers
+      when: (sonarr_enabled | default(False))
+    
+    - role: containers/radarr
+      become: yes
+      tags:
+        - radarr
+        - containers
+      when: (radarr_enabled | default(False))
+
+  
+    - role: containers/jackett
+      become: yes
+      tags:
+        - jackett
+        - containers
+      when: (jackett_enabled | default(False))
+    
+
+    - role: containers/dashy
+      become: yes
+      tags:
+        - dashy
+        - containers
+      when: (dashy_enabled | default(False))
+
+    - role: containers/deluge
+      become: yes
+      tags:
+        - deluge
+        - containers
+      when: (deluge_enabled | default(False))
+
+    - role: containers/bazarr
+      become: yes
+      tags:
+        - bazarr
+        - containers
+      when: (bazarr_enabled | default(False))
+
+    - role: containers/calibre
+      become: yes
+      tags:
+        - calibre
+        - containers
+      when: (calibre_enabled | default(False))
+
+    - role: containers/youtubedlmaterial
+      become: yes
+      tags:
+        - youtubedlmaterial
+        - containers
+      when: (youtubedlmaterial_enabled | default(False)) 
+
+    - role: containers/openbooks
+      become: yes
+      tags:
+        - openbooks
+        - containers
+      when: (openbooks_enabled | default(False)) 
+
+    - role: containers/wireguard
+      become: yes
+      tags: 
+        - wireguard
+        - containers
+      when: enable_wireguard | default(False)
+
+#MISC
+    - role: linux-system-roles.cockpit
+      tags:
+        - cockpit
+      when: enable_cockpit | default(False)
+    # Samba shares
+
+    - role: bertvv.samba
+      become: yes
+      tags:
+        - samba
+      when: enable_nas_stuff | default(False)
+
+    - role: geerlingguy.node_exporter
+      become: yes
+      tags:
+        - node_exporter
+        - monitoring
+        - containers
+      when: enable_node_exporter | default(False)
+
+    #- role: ironicbadger.snapraid
+    #  become: yes
+    #  tags:
+    #    - snapraid
+    #  when: enable_nas_stuff | default(False)

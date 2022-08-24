@@ -1,0 +1,45 @@
+---
+- name: Create Deluge Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+    - "{{ deluge_config_directory }}"
+    - "{{ deluge_download_directory }}"
+
+- name: Deluge Docker Container
+  docker_container:
+    name: deluge
+    image: linuxserver/deluge
+    pull: true
+    #networks:
+    # - proxy
+    volumes:
+      - "{{ deluge_config_directory }}:/config:rw"
+      - "{{ deluge_download_directory }}:/root/Downloads:rw"
+    ports:
+      - "{{ deluge_port }}:8112"
+    env:
+      TZ: "{{ deluge_timezone }}"
+      PUID: "{{ deluge_user_id }}"
+      PGID: "{{ deluge_group_id }}"
+    restart_policy: unless-stopped
+    labels:
+      # "traefik.enable=true"
+      # "traefik.http.routers.deluge.entrypoints=http"
+      # "traefik.http.routers.deluge.rule=Host(`deluge.local.atahankucuk.com`)"
+      # "traefik.http.middlewares.deluge-https-redirect.redirectscheme.scheme=https"
+      # "traefik.http.routers.deluge.middlewares=deluge-https-redirect"
+      # "traefik.http.routers.deluge-secure.entrypoints=https"
+      # "traefik.http.routers.deluge-secure.rule=Host(`deluge.local.atahankucuk.com`)"
+      # "traefik.http.routers.deluge-secure.tls=true"
+      # "traefik.http.routers.deluge-secure.service=deluge"
+      # "traefik.http.services.deluge.loadbalancer.server.port=8112"
+      # "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no
+

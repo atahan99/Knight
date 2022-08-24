@@ -1,0 +1,147 @@
+---
+- name: Ubuntu specific tasks
+  become: yes
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  block:
+  - name: Remove cloud-config to avoid boot delay
+    apt:
+      name: cloud-config
+      state: absent
+
+  - name: Make sure iSCSId and Open-iSCSId services are disabled
+    service:
+      name: "{{ item }}"
+      state: stopped
+      enabled: no
+    with_items:
+      - iscsid
+      - open-iscsi
+
+- name: Generate the locale (Debian and Ubuntu)
+  when: ansible_os_family == 'Debian'
+  locale_gen:
+    name: "{{ locale }}"
+    state: present
+
+- name: update and upgrade
+  apt:
+    update_cache: yes
+    upgrade: yes
+    autoremove: yes
+    
+- name: Check if reboot required
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required_file
+
+- name: Reboot if required
+  reboot:
+    msg: Rebooting due to a kernel update
+  when: reboot_required_file.stat.exists
+
+- name: Install extra packages
+  package:
+    name: "{{ extra_packages }}"
+    state: present
+
+- name: Set the hostname
+  hostname:
+    name: "{{ inventory_hostname }}" 
+
+- name: Replace the hostname entry with our own
+  lineinfile:
+    path: /etc/hosts
+    insertafter: ^127\.0\.0\.1 *localhost
+    line: "127.0.0.1 {{ inventory_hostname }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Disable cron e-mail notifications
+  cron:
+    name: MAILTO
+    user: root
+    env: yes
+    job: ""
+
+- name: Set the name of a sudo group
+  set_fact:
+    sudo_group: sudo
+   
+- name: Create a login user
+  user:
+    name: "{{ username }}"
+    password: "{{ password | password_hash('sha512') }}"
+    groups: 
+      - "{{ sudo_group }}"
+      - users
+    state: present
+    append: true
+
+- name: Ensure group "{{ username }}" exists
+  group:
+    name: "{{ username }}"
+    state: present
+
+- name: Ensure group "sambashare" exists
+  when: enable_samba | default(False) 
+  group:
+    name: "sambashare"
+    state: present
+ 
+- name: Append the samba group
+  when: enable_samba | default(False) 
+  user:
+    name: "{{ username }}"
+    groups: 
+      - sambashare
+    append: true
+
+- name: Chmod the user home directory
+  file:
+    path: "/home/{{ username }}"
+    state: directory
+    mode: 0755
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    recurse: yes
+
+- name: Create additional users (no login)
+  user:
+    name: "{{ item.name }}"
+    groups: "{{ item.groups }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    update_password: on_create
+    state: present
+    append: true
+    shell: /sbin/nologin
+  with_items: "{{ additional_users }}"
+  when: additional_users is defined
+  no_log: true
+
+- name: motd
+  copy: 
+    src: motd.txt
+    dest: /etc/motd
+  tags:
+    - motd_config
+
+- name: share permissions
+  file:
+    path: "{{ item.path }}"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "u=rwX,g=rwX,o=rX"
+    recurse: true
+  loop: "{{ samba_shares }}"
+
+    
+#disable usb auto suspend
+- name: Disable usb auto suspend
+  lineinfile:
+    dest: /etc/default/grub
+    backup: yes
+    search_string: 'GRUB_CMDLINE_LINUX_DEFAULT='
+    line: GRUB_CMDLINE_LINUX_DEFAULT=" usbcore.autosuspend=-1"
+  notify: update grub2
+ 

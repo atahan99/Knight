@@ -1,0 +1,26 @@
+---
+- name: Create vpn directories
+  file:
+    path: "/etc/openvpn/ovpn_tcp"
+    state: directory
+    mode: 0755
+ 
+- name: vpn 
+  copy: 
+    src: files/vpn/proton.txt
+    dest: /etc/openvpn/ovpn_tcp/proton.txt
+  tags:
+    - vpn
+
+- name: vpn miami
+  copy: 
+    src: files/vpn/node-us-46.protonvpn.net.tcp.ovpn
+    dest: /etc/openvpn/ovpn_tcp/node-us-46.protonvpn.net.tcp.ovpn
+  tags:
+    - vpn
+- name: vpn nyc
+  copy: 
+    src: files/vpn/node-us-50.protonvpn.net.tcp.ovpn
+    dest: /etc/openvpn/ovpn_tcp/node-us-50.protonvpn.net.tcp.ovpn
+  tags:
+    - vpn

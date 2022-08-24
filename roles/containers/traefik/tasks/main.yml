@@ -1,0 +1,68 @@
+---
+- name: Create Traefik Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ traefik_data_directory }}"
+    - "{{ traefik_data_directory }}/data"
+
+- name: move Traefik traefik.yml
+  template:
+    src: traefik.yml
+    dest: "{{ traefik_data_directory }}/data/traefik.yml"
+  register: template_config
+
+- name: move config.yml 
+  template:
+    src: config.yml
+    dest: "{{ traefik_data_directory }}/data/config.yml"
+  register:  template2_config
+
+- name: touch acme.json
+  ansible.builtin.file:
+    path: "{{ traefik_data_directory }}/data/acme.json"
+    state: touch
+    mode: a+rwx,u-x,g-rwx,o-rwx
+
+- name: Traefik Docker Container
+  docker_container:
+    name: traefik
+    image: traefik:latest
+    pull: true
+    networks: 
+      - proxy
+    ports:
+      - 80:80
+      - 433:433
+    volumes:
+      - "{{ traefik_data_directory }}/data/traefik.yml:/traefik.yml:ro"
+      - "{{ traefik_data_directory }}/data/config.yml:/config.yml:ro"
+      - "{{ traefik_data_directory }}/data/acme.json:/acme.json"
+      - /etc/localtime:/etc/localtime:ro
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    env: 
+    - VERCEL_API_TOKEN: "{{ VERCEL_API_TOKEN }}"
+    labels: 
+      traefik.enable: true
+      traefik.http.routers.traefik.entrypoints: "http"
+      traefik.http.routers.traefik.rule: "Host(`traefik.local.atahankucuk.com`)"
+      traefik.http.middlewares.traefik-auth.basicauth.users: "atahan:$$apr1$$N9tM1X8Q$$CIMs3GenyqgPeBt001KTY."
+      traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme: "https"
+      traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto: "https"
+      traefik.http.routers.traefik.middlewares: "traefik-https-redirect"
+      traefik.http.routers.traefik-secure.entrypoints: "https"
+      traefik.http.routers.traefik-secure.rule: "Host(`traefik.local.atahankucuk.com`)"
+      traefik.http.routers.traefik-secure.middlewares: "traefik-auth"
+      traefik.http.routers.traefik-secure.tls: true
+      traefik.http.routers.traefik-secure.tls.certresolver: "vercel"
+      traefik.http.routers.traefik-secure.tls.domains[0].main: "local.atahankucuk.com"
+      traefik.http.routers.traefik-secure.tls.domains[0].sans: "*.local.atahankucuk.com"
+      traefik.http.routers.traefik-secure.service: "api@internal"
+    restart_policy: unless-stopped
+    recreate: "{{ template_config is changed }}"
+
+- name: docker proxy network
+  docker_network:
+    name: proxy
+    internal: no

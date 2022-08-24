@@ -1,0 +1,26 @@
+---
+- name: Make sure the Wireguard container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "lscr.io/linuxserver/wireguard"
+    pull: yes
+    privileged: yes
+    sysctls:
+      "net.ipv4.conf.all.src_valid_mark": "1"
+    capabilities: 
+      - net_admin
+      - sys_module
+    state: 'started'
+    env:
+      "SERVERURL": "wireguard.local.atahankucuk.com"
+      "PEERS": "1"
+      "PEERDNS": "auto"
+      "INTERNAL_SUBNET": "10.8.1.0/24"
+      "ALLOWEDIPS": "0.0.0.0/0"
+      "LOG_CONFS": "TRUE"
+    ports:
+      - "51820:51820/udp"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+      - "/lib/modules:/lib/modules"
+    restart_policy: unless-stopped

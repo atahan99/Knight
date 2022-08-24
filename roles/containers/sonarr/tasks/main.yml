@@ -1,0 +1,43 @@
+---
+- name: Create Sonarr Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ sonarr_data_directory }}"
+
+- name: Sonarr
+  docker_container:
+    name: sonarr
+    image: linuxserver/sonarr
+    pull: true
+    #networks:
+    # - proxy
+    volumes:
+      - "{{ sonarr_tv_directory }}:/tv:rw"
+      - "{{ sonarr_download_directory }}:/downloads:rw"
+      - "{{ sonarr_data_directory }}:/config:rw"
+    ports:
+      - "{{ sonarr_port }}:8989"
+    env:
+      TZ: "{{ timezone }}"
+      PUID: "{{ sonarr_user_id }}"
+      PGID: "{{ sonarr_group_id }}"
+    restart_policy: unless-stopped
+    #labels:
+    # - "traefik.enable=true"
+    # - "traefik.http.routers.sonarr.entrypoints=http"
+    # - "traefik.http.routers.sonarr.rule=Host(`sonarr.local.atahankucuk.com`)"
+    # - "traefik.http.middlewares.sonarr-https-redirect.redirectscheme.scheme=https"
+    # - "traefik.http.routers.sonarr.middlewares=sonarr-https-redirect"
+    # - "traefik.http.routers.sonarr-secure.entrypoints=https"
+    # - "traefik.http.routers.sonarr-secure.rule=Host(`sonarr.local.atahankucuk.com`)"
+    # - "traefik.http.routers.sonarr-secure.tls=true"
+    # - "traefik.http.routers.sonarr-secure.service=sonarr"
+    # - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+    # - "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no

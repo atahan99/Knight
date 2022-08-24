@@ -1,0 +1,43 @@
+---
+- name: Create Bazarr Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ bazarr_data_directory }}"
+
+- name: Bazarr
+  docker_container:
+    name: bazarr
+    image: linuxserver/bazarr
+    pull: true
+   # networks:
+   #  - proxy
+    volumes:
+      - "{{ bazarr_tv_directory }}:/tv:rw"
+      - "{{ bazarr_movies_directory }}:/movies:rw"
+      - "{{ bazarr_data_directory }}:/config:rw"
+    ports:
+      - "{{ bazarr_port }}:6767"
+    env:
+      TZ: "{{ timezone }}"
+      PUID: "{{ bazarr_user_id }}"
+      PGID: "{{ bazarr_group_id }}"
+    restart_policy: unless-stopped
+    #labels:
+    #  - "traefik.enable=true"
+    #  - "traefik.http.routers.bazarr.entrypoints=http"
+    #  - "traefik.http.routers.bazarr.rule=Host(`bazarr.local.atahankucuk.com`)"
+    #  - "traefik.http.middlewares.bazarr-https-redirect.redirectscheme.scheme=https"
+    #  - "traefik.http.routers.bazarr.middlewares=bazarr-https-redirect"
+    #  - "traefik.http.routers.bazarr-secure.entrypoints=https"
+    #  - "traefik.http.routers.bazarr-secure.rule=Host(`bazarr.local.atahankucuk.com`)"
+    #  - "traefik.http.routers.bazarr-secure.tls=true"
+    #  - "traefik.http.routers.bazarr-secure.service=bazarr"
+    #  - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+    #  - "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no

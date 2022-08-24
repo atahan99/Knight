@@ -1,0 +1,8 @@
+---
+youtubedlmaterial_available_externally: "false"
+youtubedlmaterial_data_directory: "{{ docker_dir }}/youtubedlmaterial"
+youtubedlmaterial_dl_audio_directory: "{{ downloads_root }}/youtube/audio"
+youtubedlmaterial_dl_video_directory: "{{ downloads_root }}/youtube/video"
+youtubedlmaterial_dl_subscriptions_directory: "{{ downloads_root }}/youtube/subscriptions"
+youtubedlmaterial_port_http: "8998"
+youtubedlmaterial_enabled: true

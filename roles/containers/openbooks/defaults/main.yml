@@ -1,0 +1,6 @@
+---
+container_name: openbooks
+openbooks_available_externally: "false"
+openbooks_hostname: "openbooks"
+openbooks_enabled: true
+

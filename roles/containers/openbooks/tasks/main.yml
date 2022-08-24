@@ -1,0 +1,33 @@
+---
+- name: Make sure the {{ container_name }} container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "evanbuss/openbooks"
+    pull: yes
+    state: 'started'
+    #networks:
+    # - proxy
+    volumes:
+      - "{{ books_root }}"
+    ports:
+      - "8081:80"
+    env:
+      "TZ": "{{ timezone }}"
+    restart_policy: unless-stopped
+    #labels:
+    # - "traefik.enable=true"
+    # - "traefik.http.routers.openbooks.entrypoints=http"
+    # - "traefik.http.routers.openbooks.rule=Host(`openbooks.local.atahankucuk.com`)"
+    # - "traefik.http.middlewares.openbooks-https-redirect.redirectscheme.scheme=https"
+    # - "traefik.http.routers.openbooks.middlewares=openbooks-https-redirect"
+    # - "traefik.http.routers.openbooks-secure.entrypoints=https"
+    # - "traefik.http.routers.openbooks-secure.rule=Host(`openbooks.local.atahankucuk.com`)"
+    # - "traefik.http.routers.openbooks-secure.tls=true"
+    # - "traefik.http.routers.openbooks-secure.service=openbooks"
+    # - "traefik.http.services.openbooks.loadbalancer.server.port=8081"
+    # - "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no

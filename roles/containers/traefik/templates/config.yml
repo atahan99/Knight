@@ -1,0 +1,219 @@
+http:
+ #region routers 
+    sonarr:
+      entryPoints:
+        - "https"
+      rule: "Host(`sonarr.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: sonarr
+    youtubedlmaterial:
+      entryPoints:
+        - "https"
+      rule: "Host(`youtubedlmaterial.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: youtubedlmaterial
+    plex:
+      entryPoints:
+        - "https"
+      rule: "Host(`plex.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: plex
+    radarr:
+      entryPoints:
+        - "https"
+      rule: "Host(`radarr.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: radarr
+    openbooks:
+      entryPoints:
+        - "https"
+      rule: "Host(`openbooks.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: openbooks
+    bazarr:
+      entryPoints:
+        - "https"
+      rule: "Host(`bazarr.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: bazarr
+    calibre:
+      entryPoints:
+        - "https"
+      rule: "Host(`calibre.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: calibre
+    dashy:
+      entryPoints:
+        - "https"
+      rule: "Host(`dashy.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: dashy
+    deluge:
+      entryPoints:
+        - "https"
+      rule: "Host(`deluge.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: deluge
+    heimdall:
+      entryPoints:
+        - "https"
+      rule: "Host(`heimdall.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: heimdall
+    jackett:
+      entryPoints:
+        - "https"
+      rule: "Host(`jackett.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: jackett
+    jellyfin:
+      entryPoints:
+        - "https"
+      rule: "Host(`jellyfin.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: jellyfin
+    cockpit:
+      entryPoints:
+        - "https"
+      rule: "Host(`cockpit.local.atahankucuk.com`)"
+      middlewares:
+        - default-headers
+      tls: {}
+      service: cockpit
+    #pihole:
+    #  entryPoints:
+    #    - "https"
+    #  rule: "Host(`pihole.local.example.com`)"
+    #  middlewares:
+    #    - default-headers
+    #    - addprefix-pihole
+    #  tls: {}
+    #  service: pihole
+   
+#endregion
+#region services
+  services:
+    cockpit:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:9090"
+        passHostHeader: true
+    youtubedlmaterial:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.50.233:8998"
+        passHostHeader: true
+    sonarr:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.50.233:8989"
+        passHostHeader: true
+    radarr:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:7878"
+        passHostHeader: true
+    openbooks:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:8081"
+        passHostHeader: true
+    plex:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:32400"
+        passHostHeader: true
+    jellyfin:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:8896"
+        passHostHeader: true
+    heimdall:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:1080"
+        passHostHeader: true
+    deluge:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:8112"
+        passHostHeader: true
+    dashy:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:8082"
+        passHostHeader: true
+    calibre:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:8083"
+        passHostHeader: true
+    bazarr:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:6767"
+        passHostHeader: true
+    jackett:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.50.233:9117"
+        passHostHeader: true
+#endregion
+  middlewares:
+    #addprefix-pihole:
+    #  addPrefix:
+    #    prefix: "/admin"
+    https-redirect:
+      redirectScheme:
+        scheme: https
+
+    default-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 15552000
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+
+    default-whitelist:
+      ipWhiteList:
+        sourceRange:
+        - "10.0.0.0/8"
+        - "192.168.0.0/16"
+        - "172.16.0.0/12"
+
+    secured:
+      chain:
+        middlewares:
+        - default-whitelist
+        - default-headers

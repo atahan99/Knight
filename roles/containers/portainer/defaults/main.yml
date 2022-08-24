@@ -1,0 +1,12 @@
+---
+portainer_enabled: true
+portainer_available_externally: "false"
+
+# directories
+portainer_data_directory: "{{ docker_dir }}/portainer/config"
+
+# network
+portainer_port: "9000"
+portainer_hostname: "portainer"
+
+

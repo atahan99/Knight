@@ -1,0 +1,43 @@
+---
+- name: Create Calibre-web Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ calibre_data_directory }}/config"
+
+- name: Calibre-web Docker Container
+  docker_container:
+    name: calibre
+    image: linuxserver/calibre-web:latest
+    pull: true
+    #networks:
+    # - proxy
+    volumes:
+      - "{{ calibre_data_directory }}/config:/config"
+      - "{{ calibre_books_root }}:/books"
+    env:
+      TZ: "{{ timezone }}"
+      PUID: "{{ calibre_user_id }}"
+      PGID: "{{ calibre_group_id }}"
+      DOCKER_MODS: "{{ calibre_ebook_conversion }}"
+    ports:
+      - "{{ calibre_port }}:8083"
+    restart_policy: unless-stopped
+    #labels:
+    # - "traefik.enable=true"
+    # - "traefik.http.routers.calibre.entrypoints=http"
+    # - "traefik.http.routers.calibre.rule=Host(`calibre.local.atahankucuk.com`)"
+    # - "traefik.http.middlewares.calibre-https-redirect.redirectscheme.scheme=https"
+    # - "traefik.http.routers.calibre.middlewares=calibre-https-redirect"
+    # - "traefik.http.routers.calibre-secure.entrypoints=https"
+    # - "traefik.http.routers.calibre-secure.rule=Host(`calibre.local.atahankucuk.com`)"
+    # - "traefik.http.routers.calibre-secure.tls=true"
+    # - "traefik.http.routers.calibre-secure.service=calibre"
+    # - "traefik.http.services.calibre.loadbalancer.server.port=8083"
+    # - "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no

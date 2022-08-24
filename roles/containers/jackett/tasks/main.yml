@@ -1,0 +1,40 @@
+---
+- name: Create jackett Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ jackett_data_directory }}"
+
+- name: jackett
+  docker_container:
+    name: jackett
+    image: linuxserver/jackett
+    #networks:
+    # - proxy
+    volumes:
+      - "{{ jackett_data_directory }}:/config:rw"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "{{ jackett_torrents_root }}:/downloads"
+    ports:
+      - "{{ jackett_port }}:9117"
+    env:
+      TZ: "{{ timezone }}"
+    restart_policy: unless-stopped
+    #labels:
+    # - "traefik.enable=true"
+    # - "traefik.http.routers.jackett.entrypoints=http"
+    # - "traefik.http.routers.jackett.rule=Host(`jackett.local.atahankucuk.com`)"
+    # - "traefik.http.middlewares.jackett-https-redirect.redirectscheme.scheme=https"
+    # - "traefik.http.routers.jackett.middlewares=jackett-https-redirect"
+    # - "traefik.http.routers.jackett-secure.entrypoints=https"
+    # - "traefik.http.routers.jackett-secure.rule=Host(`jackett.local.atahankucuk.com`)"
+    # - "traefik.http.routers.jackett-secure.tls=true"
+    # - "traefik.http.routers.jackett-secure.service=jackett"
+    # - "traefik.http.services.jackett.loadbalancer.server.port=9117"
+    # - "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no

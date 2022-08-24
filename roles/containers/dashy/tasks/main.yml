@@ -1,0 +1,28 @@
+---
+- name: Dashy Docker Container
+  docker_container:
+    name: dashy
+    image: lissy93/dashy:latest
+    pull: true
+    #networks:
+    #  - proxy
+    ports:
+      - "{{ dashy_port }}:80"
+    restart_policy: unless-stopped
+    #labels:
+    # - "traefik.enable=true"
+    # - "traefik.http.routers.dashy.entrypoints=http"
+    # - "traefik.http.routers.dashy.rule=Host(`dashy.local.atahankucuk.com`)"
+    # - "traefik.http.middlewares.dashy-https-redirect.redirectscheme.scheme=https"
+    # - "traefik.http.routers.dashy.middlewares=dashy-https-redirect"
+    # - "traefik.http.routers.dashy-secure.entrypoints=https"
+    # - "traefik.http.routers.dashy-secure.rule=Host(`dashy.local.atahankucuk.com`)"
+    # - "traefik.http.routers.dashy-secure.tls=true"
+    # - "traefik.http.routers.dashy-secure.service=dashy"
+    # - "traefik.http.services.dashy.loadbalancer.server.port=8082"
+    # - "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no

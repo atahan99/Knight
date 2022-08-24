@@ -1,0 +1,59 @@
+---
+- name: Create Jellyfin Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ jellyfin_config_directory }}"
+
+- name: Make sure that QuickSync packages are installed
+  become: yes
+  package:
+    name:
+      - vainfo
+      - intel-media-va-driver-non-free
+    state: present
+
+- name: Jellyfin Docker Container
+  docker_container:
+    name: jellyfin
+    image: linuxserver/jellyfin
+    pull: true
+    #networks:
+    # - proxy
+    devices:
+      - "/dev/dri/renderD128:/dev/dri/renderD128" #intel
+    volumes:
+      - "{{ jellyfin_config_directory }}:/config:rw"
+      - "{{ jellyfin_movies_directory }}:/movies:{{ jellyfin_movies_permissions }}"
+      - "{{ jellyfin_music_directory }}:/music:{{ jellyfin_music_permissions }}"
+      - "{{ jellyfin_photos_directory }}:/photos:{{ jellyfin_photos_permissions }}"
+      - "{{ jellyfin_tv_directory }}:/tv:{{ jellyfin_tv_permissions }}"
+      - "{{ jellyfin_books_directory }}:/books:{{ jellyfin_books_permissions }}"
+      - "{{ jellyfin_audiobooks_directory }}:/audiobooks:{{ jellyfin_audiobooks_permissions }}"
+    ports:
+      - "{{ jellyfin_port_http }}:8096"
+      - "{{ jellyfin_port_https }}:8920"
+    env:
+      DOCKER_MODS: "linuxserver/mods:jellyfin-opencl-intel"
+      TZ: "{{ timezone }}"
+      PUID: "{{ jellyfin_user_id }}"
+      PGID: "{{ jellyfin_group_id }}"
+    restart_policy: unless-stopped
+    #labels:
+      # "traefik.enable=true"
+      # "traefik.http.routers.jellyfin.entrypoints=http"
+      # "traefik.http.routers.jellyfin.rule=Host(`jellyfin.local.atahankucuk.com`)"
+      # "traefik.http.middlewares.jellyfin-https-redirect.redirectscheme.scheme=https"
+      # "traefik.http.routers.jellyfin.middlewares=jellyfin-https-redirect"
+      # "traefik.http.routers.jellyfin-secure.entrypoints=https"
+      # "traefik.http.routers.jellyfin-secure.rule=Host(`jellyfin.local.atahankucuk.com`)"
+      # "traefik.http.routers.jellyfin-secure.tls=true"
+      # "traefik.http.routers.jellyfin-secure.service=jellyfin"
+      # "traefik.http.services.jellyfin.loadbalancer.server.port=8896"
+      # "traefik.docker.network=proxy"
+
+#- name: docker proxy network
+# docker_network:
+#   name: proxy
+#   internal: no
