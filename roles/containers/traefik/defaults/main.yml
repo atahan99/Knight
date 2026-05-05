@@ -1,0 +1,30 @@
+---
+# External Access
+# Traefik will allow access to certain applications externally. To enable this you'll either; a domain name that points to your
+# home static IP address, the cloudflare with the cloudflare_ddns dynamic DNS container enabled, or use a dynamic DNS provider like no-ip.
+# You'll also need to map ports 80 and 443 from your router to your ansible-nas server, then enable the per-app "available_externally"
+# settings.
+traefik_enabled: false
+
+# directories
+traefik_data_directory: "{{ docker_dir }}/traefik"
+
+traefik_docker_image: "traefik:v2.11"
+#traefik_log_level: "INFO"
+
+# DNS names: set traefik_public_domain to your wildcard base (e.g. local.example.com). Host rules use app.{{ traefik_public_domain }}.
+traefik_public_domain: "local.example.com"
+
+# Backend URLs in file provider (host IP or DNS of the NAS as reachable from Traefik)
+traefik_backend_host: "{{ ansible_host | default('192.168.1.10') }}"
+
+# ACME / Let's Encrypt (example uses Vercel DNS; see https://go-acme.github.io/lego/dns/)
+traefik_acme_email: "{{ lookup('env', 'TRAEFIK_ACME_EMAIL') | default('admin@example.com', true) }}"
+# traefik_acme_server: "https://acme-staging-v02.api.letsencrypt.org/directory" # staging
+traefik_acme_server: "https://acme-v02.api.letsencrypt.org/directory"
+
+# Vercel API token for DNS challenge (export VERCEL_API_TOKEN); empty disables resolver env in container if you override tasks
+VERCEL_API_TOKEN: "{{ lookup('env', 'VERCEL_API_TOKEN') | default('', true) }}"
+
+# Traefik dashboard basic auth for Docker labels: htpasswd -nb user pass then double each $ for Ansible/YAML (e.g. user:$$apr1$$...)
+traefik_dashboard_basicauth_users: "{{ lookup('env', 'TRAEFIK_DASHBOARD_BASICAUTH') | default('', true) }}"

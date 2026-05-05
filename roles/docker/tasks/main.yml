@@ -1,0 +1,111 @@
+---
+- include_tasks: repo_arch.yml
+
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_facts['distribution'] }}.yml"
+
+- name: Install required system packages
+  package:
+    state: present
+    name: "{{ docker_deps }}"
+
+- name: Install Docker (Ubuntu)
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  block:
+  - name: Add Docker GPG apt Key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker Repository
+    apt_repository:
+      repo: "deb [arch={{ repo_arch }}] https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }} {{ ansible_lsb['codename'] }} stable"
+      state: present
+
+- name: Update apt and install docker-ce
+  when: ansible_facts['os_family'] == 'Debian'
+  apt:
+    update_cache: yes
+    name: "{{ docker_packages }}"
+    state: present
+
+- name: Ensure group docker exists
+  group:
+    name: docker
+    state: present
+
+- name: Add user "{{ username }}" to group docker
+  user:
+    name: '{{ username }}'
+    groups:
+      - docker
+    append: yes
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
+
+- name: Make sure Docker is running and enabled
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Get a list of containers
+  delegate_to: localhost
+  become: no
+  find:
+    paths:
+      - "roles/containers"
+    file_type: directory
+    recurse: no
+  register: containers
+
+
+- name: Handle persistent data
+  become: no
+  when: "enable_nas_stuff | default(False)"
+  block:
+  - name: Check if the persistent data folder exists on the remote machine
+    stat:
+      path: "{{ docker_dir }}"
+    register: persistent_data
+    when: "enable_nas_stuff | default(False)"
+
+  - name: Check if the persistent data folder is empty
+    find:
+      paths:
+        - "{{ docker_dir }}/"
+      recurse: yes
+    register: persistent_data_find
+    when: "enable_nas_stuff | default(False)"
+
+  - name: Create the persistent data folder on the remote machine
+    file:
+      dest: "{{ docker_dir }}"
+      state: directory
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      mode: 0755
+      recurse: yes
+    when: not persistent_data.stat.exists
+
+  #- name: Restore the "{{ docker_dir }}" folder from the MergerFS array
+  #  synchronize:
+  #    src: "{{ mergerfs_root }}/docker_data/data"
+  #    dest: "{{ docker_dir }}"
+  #    delete: true
+  #    recurse: yes
+  #  delegate_to: "{{ inventory_hostname }}"
+  #  when: persistent_data_find.matched < 20 or not persistent_data.stat.exists
+
+- name: Chmod the data folder
+  become: yes
+  file:
+    dest: "{{ docker_dir }}"
+    state: directory
+    owner: "{{ username }}"
+    mode: "0775"
+    group: "{{ username }}"
+    recurse: yes
+

@@ -1,0 +1,84 @@
+---
+- name: Require Traefik dashboard basic auth (set TRAEFIK_DASHBOARD_BASICAUTH)
+  ansible.builtin.assert:
+    that:
+      - traefik_dashboard_basicauth_users | length > 0
+    fail_msg: >-
+      Set TRAEFIK_DASHBOARD_BASICAUTH to an htpasswd line for Traefik (e.g. run
+      `htpasswd -nb user yourpassword` and double every `$` for YAML). See README.
+
+- name: Require Vercel token for ACME DNS challenge (set VERCEL_API_TOKEN)
+  ansible.builtin.assert:
+    that:
+      - VERCEL_API_TOKEN | length > 0
+    fail_msg: >-
+      Set VERCEL_API_TOKEN in the environment for Let's Encrypt DNS challenge with Vercel, or change the Traefik role to another provider.
+
+- name: Create Traefik Directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ traefik_data_directory }}"
+    - "{{ traefik_data_directory }}/data"
+
+- name: move Traefik traefik.yml
+  template:
+    src: traefik.yml
+    dest: "{{ traefik_data_directory }}/data/traefik.yml"
+  register: template_config
+
+- name: move config.yml
+  template:
+    src: config.yml
+    dest: "{{ traefik_data_directory }}/data/config.yml"
+  register: template2_config
+
+- name: touch acme.json
+  ansible.builtin.file:
+    path: "{{ traefik_data_directory }}/data/acme.json"
+    state: touch
+    mode: a+rwx,u-x,g-rwx,o-rwx
+
+- name: Traefik Docker Container
+  docker_container:
+    name: traefik
+    image: "{{ traefik_docker_image }}"
+    pull: true
+    networks:
+      - proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "{{ traefik_data_directory }}/data/traefik.yml:/traefik.yml:ro"
+      - "{{ traefik_data_directory }}/data/config.yml:/config.yml:ro"
+      - "{{ traefik_data_directory }}/data/acme.json:/acme.json"
+      - /etc/localtime:/etc/localtime:ro
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    env:
+      - "VERCEL_API_TOKEN={{ VERCEL_API_TOKEN }}"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.traefik.entrypoints: "http"
+      traefik.http.routers.traefik.rule: "Host(`traefik.{{ traefik_public_domain }}`)"
+      traefik.http.middlewares.traefik-auth.basicauth.users: "{{ traefik_dashboard_basicauth_users }}"
+      traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme: "https"
+      traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto: "https"
+      traefik.http.routers.traefik.middlewares: "traefik-https-redirect"
+      traefik.http.routers.traefik-secure.entrypoints: "https"
+      traefik.http.routers.traefik-secure.rule: "Host(`traefik.{{ traefik_public_domain }}`)"
+      traefik.http.routers.traefik-secure.middlewares: "traefik-auth"
+      traefik.http.routers.traefik-secure.tls: true
+      traefik.http.routers.traefik-secure.tls.certresolver: "vercel"
+      traefik.http.routers.traefik-secure.tls.domains[0].main: "{{ traefik_public_domain }}"
+      traefik.http.routers.traefik-secure.tls.domains[0].sans: "*.{{ traefik_public_domain }}"
+      traefik.http.routers.traefik-secure.service: "api@internal"
+    restart_policy: unless-stopped
+    recreate: "{{ template_config is changed or template2_config is changed }}"
+  no_log: true
+
+- name: docker proxy network
+  docker_network:
+    name: proxy
+    internal: no

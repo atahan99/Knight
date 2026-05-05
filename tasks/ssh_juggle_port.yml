@@ -1,0 +1,50 @@
+---
+# Try the configured SSH port first; if unreachable, try port 22 once.
+# Prefer SSH keys in inventory. For one-time bootstrap only, export ANSIBLE_SSH_PASSWORD.
+- name: SSH Port Juggle | Try connecting via SSH
+  wait_for_connection:
+    timeout: 10
+  ignore_errors: true
+  register: _ssh_port_result
+
+- name: SSH Port Juggle | Retry on port 22
+  when: _ssh_port_result is failed
+  block:
+    - name: SSH Port Juggle | Set fallback port 22
+      ansible.builtin.set_fact:
+        ansible_ssh_port: "22"
+
+    - name: SSH Port Juggle | Try port 22
+      wait_for_connection:
+        timeout: 10
+      ignore_errors: true
+      register: _ssh_port_22_result
+
+- name: SSH Port Juggle | Optional password bootstrap (ANSIBLE_SSH_PASSWORD)
+  when:
+    - _ssh_port_result is failed
+    - _ssh_port_22_result is defined
+    - _ssh_port_22_result is failed
+    - (lookup('env', 'ANSIBLE_SSH_PASSWORD') | default('', true)) | length > 0
+  wait_for_connection:
+    timeout: 15
+  vars:
+    ansible_ssh_pass: "{{ lookup('env', 'ANSIBLE_SSH_PASSWORD') }}"
+    ansible_ssh_common_args: "-o PreferredAuthentications=password -o PubkeyAuthentication=no"
+  ignore_errors: true
+  register: _ssh_port_password_result
+  no_log: true
+
+- name: SSH Port Juggle | Fail if still unreachable
+  ansible.builtin.fail:
+    msg: >-
+      Could not connect via SSH on the configured port or port 22.
+      Verify ansible_host, ansible_user, and SSH keys in your inventory.
+      For initial imaging only, export ANSIBLE_SSH_PASSWORD (not stored in this repo).
+  when:
+    - _ssh_port_result is failed
+    - (_ssh_port_22_result is not defined) or (_ssh_port_22_result is failed)
+    - >-
+      ((lookup('env', 'ANSIBLE_SSH_PASSWORD') | default('', true)) | length == 0)
+      or (_ssh_port_password_result is not defined)
+      or (_ssh_port_password_result is failed)

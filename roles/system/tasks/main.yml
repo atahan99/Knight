@@ -1,0 +1,7 @@
+---
+
+- include_tasks: yeet_snaps.yml
+- include_tasks: essential.yml
+- include_tasks: ssh.yml
+- include_tasks: monitoring.yml
+- include_tasks: vpn.yml

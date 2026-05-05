@@ -1,0 +1,23 @@
+---
+deluge_enabled: true
+deluge_available_externally: "false"
+
+# directories
+deluge_config_directory: "{{ docker_dir }}/deluge/config"
+deluge_download_directory: "{{ downloads_root }}"
+deluge_watch_directory: "{{ torrents_root }}"
+
+# uid / gid
+deluge_user_id: "0"
+deluge_group_id: "0"
+
+# error logging
+deluge_log_level: "error"
+
+# network
+deluge_port: "8112"
+deluge_hostname: "deluge"
+
+deluge_timezone: "{{ timezone }}"
+
+
